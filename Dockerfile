@@ -1,49 +1,20 @@
-FROM node:lts-alpine3.21
+FROM node:18
 
-# Arguments
-ARG APP_HOME=/home/node/app
+# 安装 git（防止 clone 报错）
+RUN apt update && apt install -y git
 
-# Install system dependencies
-RUN apk add --no-cache gcompat tini git git-lfs
+# 克隆 SillyTavern 源码
+RUN git clone https://github.com/SillyTavern/SillyTavern.git /app
 
-# Create app directory
-WORKDIR ${APP_HOME}
+WORKDIR /app
 
-# Set NODE_ENV to production
-ENV NODE_ENV=production
+# 创建 data 目录，防止 cookie-secret 报错
+RUN mkdir -p /app/data
 
-# Bundle app source
-COPY . ./
-
-RUN \
-  echo "*** Install npm packages ***" && \
-  npm i --no-audit --no-fund --loglevel=error --no-progress --omit=dev && npm cache clean --force
-
-# Create config directory and link config.yaml
-RUN \
-  rm -f "config.yaml" || true && \
-  ln -s "./config/config.yaml" "config.yaml" || true && \
-  mkdir "config" || true
-
-# Pre-compile public libraries
-RUN \
-  echo "*** Run Webpack ***" && \
-  node "./docker/build-lib.js"
-
-# Set the entrypoint script
-RUN \
-  echo "*** Cleanup ***" && \
-  mv "./docker/docker-entrypoint.sh" "./" && \
-  rm -rf "./docker" && \
-  echo "*** Make docker-entrypoint.sh executable ***" && \
-  chmod +x "./docker-entrypoint.sh" && \
-  echo "*** Convert line endings to Unix format ***" && \
-  dos2unix "./docker-entrypoint.sh"
-
-# Fix extension repos permissions
-RUN git config --global --add safe.directory "*"
+# 安装依赖
+RUN npm install
 
 EXPOSE 8000
 
-# Ensure proper handling of kernel signals
-ENTRYPOINT ["tini", "--", "./docker-entrypoint.sh"]
+# 启动 SillyTavern
+CMD ["npm", "start"]
