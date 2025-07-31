@@ -3,8 +3,8 @@ FROM node:18
 # 安装 git（防止 clone 报错）
 RUN apt update && apt install -y git
 
-# 克隆 项目 源码
-RUN git clone https://github.com/ppy638/panel-demo-app
+# 克隆 SillyTavern 源码
+RUN git clone https://github.com/SillyTavern/SillyTavern.git /app
 
 WORKDIR /app
 
@@ -16,5 +16,5 @@ RUN npm install
 
 EXPOSE 8000
 
-# 启动 我的项目
+# 启动 SillyTavern
 CMD ["npm", "start"]
